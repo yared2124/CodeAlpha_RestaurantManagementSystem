@@ -1,9 +1,3 @@
-/**
- * src/models/index.js
- * Central registry for all models. Also defines associations
- * between models (foreign key relationships).
- */
-
 import sequelize from "../config/database.js";
 
 // Import all models
