@@ -9,8 +9,7 @@ router.use(authenticate, requireAdmin);
 
 router.get("/dashboard", adminController.getDashboard);
 
-// Additional admin endpoints can be added here:
-// router.get('/users', adminController.getAllUsers);
-// router.put('/users/:id/role', adminController.updateUserRole);
+ router.get('/users', adminController.getAllUsers);
+ router.put('/users/:id/role', adminController.updateUserRole);
 
 export default router;
