@@ -6,6 +6,9 @@ import Joi from "joi";
 
 const router = Router();
 
+// All order routes require authentication
+router.use(authenticate);
+
 // Validation schemas
 const createOrderSchema = Joi.object({
   items: Joi.array()
@@ -22,12 +25,28 @@ const createOrderSchema = Joi.object({
   orderType: Joi.string().valid("dine-in", "takeaway", "delivery").required(),
 });
 
-// Apply authentication to all order routes
-router.use(authenticate);
+const updateStatusSchema = Joi.object({
+  status: Joi.string()
+    .valid(
+      "pending",
+      "confirmed",
+      "preparing",
+      "ready",
+      "served",
+      "completed",
+      "cancelled",
+    )
+    .required(),
+  reason: Joi.string().optional(),
+});
 
 router.post("/", validate(createOrderSchema), orderController.createOrder);
 router.get("/", orderController.getAllOrders);
 router.get("/:id", orderController.getOrder);
-router.put("/:id/status", orderController.updateOrderStatus);
+router.put(
+  "/:id/status",
+  validate(updateStatusSchema),
+  orderController.updateOrderStatus,
+);
 
 export default router;
