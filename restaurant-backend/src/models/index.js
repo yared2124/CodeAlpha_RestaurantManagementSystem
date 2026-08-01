@@ -30,7 +30,7 @@ Recipe.belongsTo(MenuItem, { foreignKey: "menuItemId" });
 
 // Ingredient <-> Recipe (one-to-many)
 Ingredient.hasMany(Recipe, { foreignKey: "ingredientId" });
-Recipe.belongsTo(Ingredient, { foreignKey: "ingredientId" });
+Recipe.belongsTo(Ingredient, { foreignKey: "ingredientId", as: "ingredient" });
 
 // Ingredient <-> InventoryTransaction (one-to-many)
 Ingredient.hasMany(InventoryTransaction, { foreignKey: "ingredientId" });
