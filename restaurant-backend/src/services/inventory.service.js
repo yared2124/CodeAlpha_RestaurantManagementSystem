@@ -118,6 +118,14 @@ class InventoryService {
     }
   }
 
+  async createIngredient(data) {
+    return Ingredient.create(data);
+  }
+
+  async createRecipe(data) {
+    return Recipe.create(data);
+  }
+
   /**
    * Restore stock (when order cancelled).
    */
