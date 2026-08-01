@@ -22,6 +22,24 @@ export const validateStock = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const createIngredient = async (req, res, next) => {
+  try {
+    const ingredient = await inventoryService.createIngredient(req.body);
+    res.status(201).json({ success: true, data: ingredient });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createRecipe = async (req, res, next) => {
+  try {
+    const recipe = await inventoryService.createRecipe(req.body);
+    res.status(201).json({ success: true, data: recipe });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getTransactions = async (req, res, next) => {
   try {
     // Placeholder – implement if needed
