@@ -1,6 +1,9 @@
+/**
+ * OrderService – handles order creation, status updates, and inventory deduction.
+ * Now with synchronous (non‑event) inventory management.
+ */
 import { Order, OrderItem } from "../models/index.js";
 import { sequelize } from "../models/index.js";
-import { publishEvent } from "../utils/messaging.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
 import inventoryService from "./inventory.service.js";
 import tableService from "./table.service.js";
@@ -12,14 +15,13 @@ class OrderService {
    * Steps:
    * 1. Validate table availability (if dine‑in)
    * 2. Validate inventory (synchronous)
-   * 3. Create order and items in a transaction
-   * 4. Publish OrderPlaced event (asynchronous)
-   * 5. Return order ID
+   * 3. Create order, items, and deduct stock in a single transaction
+   * 4. Return order ID
    */
   async createOrder(data) {
     const { items, tableId, customerId, orderType } = data;
 
-    // 1. Table availability check (if dine-in)
+    // 1. Table availability (if dine-in)
     if (tableId && orderType === "dine-in") {
       const available = await tableService.isTableAvailable(
         tableId,
@@ -40,7 +42,7 @@ class OrderService {
       );
     }
 
-    // 3. Transaction
+    // 3. Transaction – create order, items, and deduct stock
     const t = await sequelize.transaction();
     try {
       const totalAmount = items.reduce(
@@ -69,25 +71,18 @@ class OrderService {
         { transaction: t },
       );
 
+      // 4. Deduct inventory synchronously (inside the transaction)
+      //    If stock fails, the transaction will rollback automatically.
+      const stockResult = await inventoryService.deductStock(items, order.id);
+      if (!stockResult.success) {
+        throw new Error(`Inventory deduction failed: ${stockResult.reason}`);
+      }
+
       await t.commit();
 
-      // 4. Publish event asynchronously (outbox pattern would be better,
-      //    but we'll use direct publish for simplicity)
-      try {
-        publishEvent("order.events", "order.placed", {
-          orderId: order.id,
-          items: items.map((i) => ({
-            menuItemId: i.menuItemId,
-            quantity: i.quantity,
-          })),
-          tableId,
-          customerId,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (err) {
-        logger.error("Failed to publish OrderPlaced event", err);
-        // Could implement a retry mechanism here
-      }
+      // (Optional) If you still want to publish events for logging/audit,
+      // you can call publishEvent here – but it's not needed for inventory.
+      // publishEvent('order.events', 'order.placed', { orderId: order.id, ... });
 
       return { orderId: order.id, status: order.status };
     } catch (error) {
@@ -98,13 +93,13 @@ class OrderService {
 
   /**
    * Update order status.
-   * If status becomes 'cancelled' or 'completed', emit appropriate events.
+   * If status becomes 'cancelled', restore inventory.
    */
   async updateStatus(orderId, status, reason = null) {
     const order = await Order.findByPk(orderId);
     if (!order) throw new NotFoundError("Order");
 
-    // Basic state machine (prevent invalid transitions)
+    // Basic state machine
     const validTransitions = {
       pending: ["confirmed", "cancelled"],
       confirmed: ["preparing", "cancelled"],
@@ -122,19 +117,24 @@ class OrderService {
 
     await order.update({ status });
 
-    // Emit events for compensation or reporting
+    // If cancelled, restore inventory
     if (status === "cancelled") {
-      publishEvent("order.events", "order.cancelled", {
+      const items = await this.getOrderItems(orderId);
+      const restoreResult = await inventoryService.restoreStock(
+        items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
         orderId,
-        reason: reason || "Cancelled by staff",
-        items: await this.getOrderItems(orderId),
-      });
-    } else if (status === "completed") {
-      publishEvent("order.events", "order.completed", {
-        orderId,
-        completedAt: new Date().toISOString(),
-      });
+      );
+      if (!restoreResult.success) {
+        logger.error("Failed to restore stock for cancelled order", {
+          orderId,
+          error: restoreResult.reason,
+        });
+        // Still allow cancellation, but log the error
+      }
     }
+
+    // (Optional) emit events for logging
+    // if (status === 'completed') publishEvent(...)
 
     return order;
   }
