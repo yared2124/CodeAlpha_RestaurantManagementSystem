@@ -40,6 +40,15 @@ export const getReservations = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const createTable = async (req, res, next) => {
+  try {
+    const table = await tableService.createTable(req.body);
+    res.status(201).json({ success: true, data: table });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const checkTableAvailability = async (req, res, next) => {
   try {
     const { tableId, startTime, duration } = req.query;

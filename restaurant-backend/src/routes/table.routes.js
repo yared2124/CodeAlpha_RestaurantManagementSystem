@@ -23,6 +23,18 @@ router.put(
   tableController.updateTableStatus,
 );
 
+router.post(
+  "/",
+  validate(
+    Joi.object({
+      tableNumber: Joi.number().integer().min(1).required(),
+      capacity: Joi.number().integer().min(1).required(),
+      location: Joi.string().optional(),
+    }),
+  ),
+  tableController.createTable,
+);
+
 // Availability check
 router.get("/availability/check", tableController.checkTableAvailability);
 
