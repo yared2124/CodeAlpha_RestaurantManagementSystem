@@ -9,8 +9,26 @@ const router = Router();
 
 router.use(authenticate, requireAdmin);
 
-// Ingredient CRUD
+// ---------- Ingredient CRUD ----------
+// GET all ingredients
 router.get("/", inventoryController.getAllIngredients);
+
+// CREATE new ingredient
+router.post(
+  "/",
+  validate(
+    Joi.object({
+      name: Joi.string().required(),
+      unit: Joi.string().required(),
+      stockQuantity: Joi.number().min(0).default(0),
+      minThreshold: Joi.number().min(0).default(5),
+      reorderQuantity: Joi.number().min(0).optional(),
+    }),
+  ),
+  inventoryController.createIngredient,
+);
+
+// UPDATE ingredient (stock, threshold, etc.)
 router.put(
   "/:id",
   validate(
@@ -23,7 +41,22 @@ router.put(
   inventoryController.updateIngredient,
 );
 
-// Stock validation (useful for admins to simulate)
+// ---------- Recipe endpoints ----------
+// CREATE a recipe (link menu item to ingredient)
+router.post(
+  "/recipes",
+  validate(
+    Joi.object({
+      menuItemId: Joi.string().uuid().required(),
+      ingredientId: Joi.string().uuid().required(),
+      quantityRequired: Joi.number().positive().required(),
+      unit: Joi.string().optional(),
+    }),
+  ),
+  inventoryController.createRecipe,
+);
+
+// ---------- Stock validation (simulate order check) ----------
 router.post(
   "/validate",
   validate(
@@ -42,7 +75,7 @@ router.post(
   inventoryController.validateStock,
 );
 
-// Transaction log (optional)
+// ---------- Transaction log (optional) ----------
 router.get("/transactions", inventoryController.getTransactions);
 
 export default router;
