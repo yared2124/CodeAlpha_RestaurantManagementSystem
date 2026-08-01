@@ -1,4 +1,4 @@
-import { Table, Reservation } from "../models/index.js";
+import { sequelize, Table, Reservation } from "../models/index.js";
 import { NotFoundError } from "../utils/errors.js";
 import { Op } from "sequelize";
 
@@ -17,6 +17,10 @@ class TableService {
     const table = await this.getTableById(id);
     await table.update({ status });
     return table;
+  }
+
+  async createTable(data) {
+    return Table.create(data);
   }
 
   /**
@@ -61,11 +65,17 @@ class TableService {
 
   // Reservation methods
   async createReservation(data) {
-    // Check table availability first
+    // Ensure reservationTime is a Date object
+    const reservationTime = new Date(data.reservationTime);
+    if (isNaN(reservationTime.getTime())) {
+      throw new Error("Invalid reservation time format");
+    }
+
+    // Check table availability
     const available = await this.isTableAvailable(
       data.tableId,
-      data.reservationTime,
-      data.durationMinutes,
+      reservationTime,
+      data.durationMinutes || 90,
     );
     if (!available) {
       throw new Error("Table not available for the selected time");
