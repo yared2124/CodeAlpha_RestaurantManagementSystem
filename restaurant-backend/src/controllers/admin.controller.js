@@ -1,4 +1,8 @@
-import adminService from "../services/admin.service.js";
+/**
+ * admin.controller.js
+ * Handles admin dashboard requests.
+ */
+import adminService from '../services/admin.service.js';
 
 export const getDashboard = async (req, res, next) => {
   try {
@@ -8,4 +12,3 @@ export const getDashboard = async (req, res, next) => {
     next(err);
   }
 };
-
