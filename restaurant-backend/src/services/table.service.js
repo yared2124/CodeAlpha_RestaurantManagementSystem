@@ -87,7 +87,7 @@ class TableService {
     const where = {};
     if (filters.tableId) where.tableId = filters.tableId;
     if (filters.status) where.status = filters.status;
-    return Reservation.findAll({ where, include: ["table"] });
+    return Reservation.findAll({ where, include: [Table] });
   }
 
   // Occupy/free table (called from order events)
