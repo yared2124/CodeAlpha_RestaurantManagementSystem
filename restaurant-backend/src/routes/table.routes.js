@@ -8,6 +8,27 @@ const router = Router();
 
 router.use(authenticate);
 
+// Availability check
+router.get("/availability/check", tableController.checkTableAvailability);
+
+// Reservation routes
+const reservationSchema = Joi.object({
+  tableId: Joi.string().uuid().required(),
+  customerName: Joi.string().required(),
+  customerPhone: Joi.string().optional(),
+  customerEmail: Joi.string().email().optional(),
+  reservationTime: Joi.date().iso().required(),
+  durationMinutes: Joi.number().integer().min(15).default(90),
+  partySize: Joi.number().integer().min(1).required(),
+});
+
+router.post(
+  "/reservations",
+  validate(reservationSchema),
+  tableController.createReservation,
+);
+router.get("/reservations", tableController.getReservations);
+
 // Table routes
 router.get("/", tableController.getAllTables);
 router.get("/:id", tableController.getTable);
@@ -34,26 +55,5 @@ router.post(
   ),
   tableController.createTable,
 );
-
-// Availability check
-router.get("/availability/check", tableController.checkTableAvailability);
-
-// Reservation routes
-const reservationSchema = Joi.object({
-  tableId: Joi.string().uuid().required(),
-  customerName: Joi.string().required(),
-  customerPhone: Joi.string().optional(),
-  customerEmail: Joi.string().email().optional(),
-  reservationTime: Joi.date().iso().required(),
-  durationMinutes: Joi.number().integer().min(15).default(90),
-  partySize: Joi.number().integer().min(1).required(),
-});
-
-router.post(
-  "/reservations",
-  validate(reservationSchema),
-  tableController.createReservation,
-);
-router.get("/reservations", tableController.getReservations);
 
 export default router;
