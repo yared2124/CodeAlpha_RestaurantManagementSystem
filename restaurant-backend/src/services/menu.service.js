@@ -17,11 +17,11 @@ class MenuService {
     const where = {};
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.isAvailable !== undefined) where.isAvailable = filters.isAvailable;
-    return MenuItem.findAll({ where, include: ['category'] });
+    return MenuItem.findAll({ where, include: [Category] });
   }
 
   async getItemById(id) {
-    const item = await MenuItem.findByPk(id, { include: ['category'] });
+    const item = await MenuItem.findByPk(id, { include: [Category] });
     if (!item) throw new NotFoundError('Menu item');
     return item;
   }
