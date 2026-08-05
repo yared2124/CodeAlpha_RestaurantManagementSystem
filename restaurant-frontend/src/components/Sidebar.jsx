@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
+  ArrowRightOnRectangleIcon,
   HomeIcon,
   ShoppingBagIcon,
   ClipboardDocumentListIcon,
@@ -7,6 +8,7 @@ import {
   TableCellsIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "../contexts/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: HomeIcon },
@@ -18,27 +20,37 @@ const navigation = [
 ];
 
 export default function Sidebar() {
+  const { logout } = useAuth();
+
   return (
-    <div className="w-64 bg-gray-900 text-white flex flex-col">
-      <div className="p-4 text-2xl font-bold border-b border-gray-700">
-        Restaurant
+    <aside className="sidebar">
+      <div className="brand-block">
+        <div className="flex items-center gap-3">
+          <div className="brand-mark">R</div>
+          <div>
+            <div className="text-lg font-extrabold leading-tight">Restaurant</div>
+            <div className="text-xs font-semibold text-slate-400">Operations</div>
+          </div>
+        </div>
       </div>
       <nav className="flex-1 p-4 space-y-2">
         {navigation.map((item) => (
           <NavLink
             key={item.name}
             to={item.href}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-700 transition ${
-                isActive ? "bg-gray-700" : ""
-              }`
-            }
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
           >
-            <item.icon className="w-5 h-5" />
-            {item.name}
+            <item.icon className="sidebar-icon" />
+            <span className="font-semibold">{item.name}</span>
           </NavLink>
         ))}
       </nav>
-    </div>
+      <div className="p-4">
+        <button onClick={logout} className="sidebar-logout">
+          <ArrowRightOnRectangleIcon className="sidebar-icon" />
+          <span className="font-semibold">Logout</span>
+        </button>
+      </div>
+    </aside>
   );
 }
