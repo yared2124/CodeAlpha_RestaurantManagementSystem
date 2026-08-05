@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import toast from "react-hot-toast";
+import { PlusIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+
+const blankForm = {
+  name: "",
+  description: "",
+  price: "",
+  categoryId: "",
+  preparationTimeMinutes: "",
+  isAvailable: true,
+};
 
 export default function Menu() {
   const [items, setItems] = useState([]);
@@ -8,14 +18,7 @@ export default function Menu() {
   const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    categoryId: "",
-    preparationTimeMinutes: "",
-    isAvailable: true,
-  });
+  const [formData, setFormData] = useState(blankForm);
 
   const fetchMenu = async () => {
     try {
@@ -42,6 +45,12 @@ export default function Menu() {
     fetchCategories();
   }, []);
 
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setFormData(blankForm);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -52,16 +61,7 @@ export default function Menu() {
         await api.post("/menu/items", formData);
         toast.success("Item created");
       }
-      setShowForm(false);
-      setEditingId(null);
-      setFormData({
-        name: "",
-        description: "",
-        price: "",
-        categoryId: "",
-        preparationTimeMinutes: "",
-        isAvailable: true,
-      });
+      resetForm();
       fetchMenu();
     } catch (err) {
       toast.error(err.response?.data?.error?.message || "Operation failed");
@@ -92,64 +92,71 @@ export default function Menu() {
     setShowForm(true);
   };
 
-  if (loading) return <div className="text-center py-10">Loading menu...</div>;
+  if (loading) return <ListSkeleton title="Loading menu..." />;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Menu Items</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          + Add Item
+    <section className="page">
+      <div className="page-header">
+        <div>
+          <div className="eyebrow">Menu Studio</div>
+          <h2 className="page-title">Menu Items</h2>
+          <p className="page-subtitle">Price, availability, categories, and prep timing.</p>
+        </div>
+        <button onClick={() => setShowForm(true)} className="btn btn-primary">
+          <PlusIcon className="h-5 w-5" />
+          Add Item
         </button>
       </div>
 
-      {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">
-              {editingId ? "Edit" : "Add"} Menu Item
-            </h3>
+        <div className="modal-backdrop">
+          <div className="modal-panel">
+            <div className="mb-4">
+              <div className="eyebrow">{editingId ? "Edit" : "Create"}</div>
+              <h3 className="m-0 text-xl font-extrabold text-stone-900">
+                {editingId ? "Edit Menu Item" : "Add Menu Item"}
+              </h3>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
                 placeholder="Name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full p-2 border rounded"
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="field"
                 required
               />
               <textarea
                 placeholder="Description"
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                rows="2"
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="field min-h-24"
+                rows="3"
               />
-              <input
-                type="number"
-                placeholder="Price"
-                value={formData.price}
-                onChange={(e) =>
-                  setFormData({ ...formData, price: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-                step="0.01"
-              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input
+                  type="number"
+                  placeholder="Price"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  className="field"
+                  required
+                  step="0.01"
+                />
+                <input
+                  type="number"
+                  placeholder="Prep time (minutes)"
+                  value={formData.preparationTimeMinutes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, preparationTimeMinutes: e.target.value })
+                  }
+                  className="field"
+                />
+              </div>
               <select
                 value={formData.categoryId}
-                onChange={(e) =>
-                  setFormData({ ...formData, categoryId: e.target.value })
-                }
-                className="w-full p-2 border rounded"
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                className="field"
                 required
               >
                 <option value="">Select Category</option>
@@ -159,53 +166,21 @@ export default function Menu() {
                   </option>
                 ))}
               </select>
-              <input
-                type="number"
-                placeholder="Prep time (minutes)"
-                value={formData.preparationTimeMinutes}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    preparationTimeMinutes: e.target.value,
-                  })
-                }
-                className="w-full p-2 border rounded"
-              />
-              <div className="flex items-center gap-2">
+              <label className="flex items-center gap-3 rounded-lg bg-stone-50 p-3 font-bold text-stone-700">
                 <input
                   type="checkbox"
                   checked={formData.isAvailable}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isAvailable: e.target.checked })
-                  }
-                  id="available"
+                  onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
+                  className="h-4 w-4 accent-teal-700"
                 />
-                <label htmlFor="available">Available</label>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingId(null);
-                    setFormData({
-                      name: "",
-                      description: "",
-                      price: "",
-                      categoryId: "",
-                      preparationTimeMinutes: "",
-                      isAvailable: true,
-                    });
-                  }}
-                  className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-                >
+                Available
+              </label>
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={resetForm} className="btn btn-soft">
                   Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Save
                 </button>
               </div>
             </form>
@@ -213,63 +188,87 @@ export default function Menu() {
         </div>
       )}
 
-      {/* Menu list */}
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Available
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {item.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  ${item.price}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {categories.find((c) => c.id === item.categoryId)?.name ||
-                    "—"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {item.isAvailable ? "✅" : "❌"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-red-600 hover:underline"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="panel">
+        {items.length === 0 ? (
+          <div className="table-empty">No menu items yet. Add the first item to start building the menu.</div>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Category</th>
+                  <th>Prep</th>
+                  <th>Available</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <div className="font-extrabold text-stone-900">{item.name}</div>
+                      {item.description && (
+                        <div className="mt-1 max-w-xs truncate text-sm text-stone-500">
+                          {item.description}
+                        </div>
+                      )}
+                    </td>
+                    <td className="font-bold">${Number(item.price || 0).toFixed(2)}</td>
+                    <td>{categories.find((c) => c.id === item.categoryId)?.name || "-"}</td>
+                    <td>{item.preparationTimeMinutes || "-"} min</td>
+                    <td>
+                      <span className={`status-chip ${item.isAvailable ? "status-good" : "status-bad"}`}>
+                        {item.isAvailable ? "Available" : "Hidden"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEdit(item)} className="btn btn-soft" title="Edit">
+                          <PencilSquareIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="btn btn-danger"
+                          title="Delete"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-    </div>
+    </section>
+  );
+}
+
+function ListSkeleton({ title }) {
+  return (
+    <section className="page">
+      <div className="mb-5 max-w-md space-y-3">
+        <div className="skeleton-line w-24" />
+        <div className="skeleton-line w-64" />
+      </div>
+      <div className="panel p-5">
+        <div className="mb-4 text-sm font-bold text-stone-500">{title}</div>
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="grid grid-cols-6 gap-3">
+              <div className="skeleton-line col-span-2" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
