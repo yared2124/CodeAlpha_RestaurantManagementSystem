@@ -22,6 +22,7 @@ export default function Inventory() {
   }, []);
 
   const updateStock = async (id, field, value) => {
+    if (value === null || value === "") return;
     try {
       await api.put(`/inventory/${id}`, { [field]: value });
       toast.success("Stock updated");
@@ -31,75 +32,105 @@ export default function Inventory() {
     }
   };
 
-  if (loading)
-    return <div className="text-center py-10">Loading inventory...</div>;
+  if (loading) return <InventorySkeleton />;
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Inventory</h2>
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Unit
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Stock
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Threshold
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {ingredients.map((item) => (
-              <tr key={item.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {item.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {item.unit}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <input
-                    type="number"
-                    value={item.stockQuantity}
-                    onChange={(e) =>
-                      updateStock(item.id, "stockQuantity", e.target.value)
-                    }
-                    className="w-20 p-1 border rounded"
-                    step="0.1"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {item.minThreshold}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() =>
-                      updateStock(
-                        item.id,
-                        "minThreshold",
-                        prompt("New threshold:", item.minThreshold),
-                      )
-                    }
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit threshold
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <section className="page">
+      <div className="page-header">
+        <div>
+          <div className="eyebrow">Stock Room</div>
+          <h2 className="page-title">Inventory</h2>
+          <p className="page-subtitle">Keep ingredients above threshold before service gets tight.</p>
+        </div>
+        <span className="status-chip status-warn">
+          {ingredients.filter((item) => Number(item.stockQuantity) <= Number(item.minThreshold)).length} low
+        </span>
       </div>
-    </div>
+
+      <div className="panel">
+        {ingredients.length === 0 ? (
+          <div className="table-empty">No inventory records found.</div>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Unit</th>
+                  <th>Stock</th>
+                  <th>Threshold</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ingredients.map((item) => {
+                  const low = Number(item.stockQuantity) <= Number(item.minThreshold);
+                  return (
+                    <tr key={item.id}>
+                      <td className="font-extrabold text-stone-900">{item.name}</td>
+                      <td>{item.unit}</td>
+                      <td>
+                        <input
+                          type="number"
+                          value={item.stockQuantity}
+                          onChange={(e) => updateStock(item.id, "stockQuantity", e.target.value)}
+                          className="field max-w-28"
+                          step="0.1"
+                        />
+                      </td>
+                      <td className="font-bold">{item.minThreshold}</td>
+                      <td>
+                        <span className={`status-chip ${low ? "status-bad" : "status-good"}`}>
+                          {low ? "Low stock" : "Ready"}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() =>
+                            updateStock(
+                              item.id,
+                              "minThreshold",
+                              prompt("New threshold:", item.minThreshold),
+                            )
+                          }
+                          className="btn btn-soft"
+                        >
+                          Edit threshold
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function InventorySkeleton() {
+  return (
+    <section className="page">
+      <div className="mb-5 max-w-md space-y-3">
+        <div className="skeleton-line w-24" />
+        <div className="skeleton-line w-64" />
+      </div>
+      <div className="panel p-5">
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="grid grid-cols-6 gap-3">
+              <div className="skeleton-line col-span-2" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
