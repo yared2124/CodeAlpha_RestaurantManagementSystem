@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import toast from "react-hot-toast";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function Reports() {
   const [sales, setSales] = useState(null);
@@ -9,6 +10,7 @@ export default function Reports() {
 
   const fetchSales = async () => {
     try {
+      setLoading(true);
       const res = await api.get(`/reports/daily-sales?date=${date}`);
       setSales(res.data.data);
     } catch (err) {
@@ -23,46 +25,69 @@ export default function Reports() {
   }, [date]);
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Daily Sales Report</h2>
-      <div className="flex items-center gap-4 mb-6">
+    <section className="page">
+      <div className="page-header">
+        <div>
+          <div className="eyebrow">Sales Ledger</div>
+          <h2 className="page-title">Daily Sales Report</h2>
+          <p className="page-subtitle">Compare orders and revenue by service type.</p>
+        </div>
+      </div>
+
+      <div className="toolbar">
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="p-2 border rounded"
+          className="field max-w-56"
         />
-        <button
-          onClick={fetchSales}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
+        <button onClick={fetchSales} className="btn btn-primary">
+          <ArrowPathIcon className="h-5 w-5" />
           Refresh
         </button>
       </div>
+
       {loading ? (
-        <div>Loading...</div>
+        <ReportsSkeleton />
       ) : sales ? (
-        <div className="bg-white rounded shadow p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Stat label="Total Orders" value={sales.totalOrders} />
-            <Stat label="Total Revenue" value={`$${sales.totalRevenue}`} />
-            <Stat label="Dine‑in" value={`$${sales.dineInRevenue}`} />
-            <Stat label="Takeaway" value={`$${sales.takeawayRevenue}`} />
-            <Stat label="Delivery" value={`$${sales.deliveryRevenue}`} />
+        <div className="panel p-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <Stat label="Total Orders" value={sales.totalOrders} accent="#0f766e" />
+            <Stat label="Total Revenue" value={money(sales.totalRevenue)} accent="#b7791f" />
+            <Stat label="Dine-in" value={money(sales.dineInRevenue)} accent="#2563eb" />
+            <Stat label="Takeaway" value={money(sales.takeawayRevenue)} accent="#c2410c" />
+            <Stat label="Delivery" value={money(sales.deliveryRevenue)} accent="#7c3aed" />
           </div>
         </div>
       ) : (
-        <div className="bg-yellow-50 p-4 rounded">No data for this date</div>
+        <div className="panel empty-state">No data for this date.</div>
       )}
+    </section>
+  );
+}
+
+function Stat({ label, value, accent }) {
+  return (
+    <div className="metric-card" style={{ "--accent": accent }}>
+      <div className="metric-label">{label}</div>
+      <div className="metric-value">{value}</div>
     </div>
   );
 }
 
-function Stat({ label, value }) {
+function money(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function ReportsSkeleton() {
   return (
-    <div className="text-center p-4 bg-gray-50 rounded">
-      <div className="text-sm text-gray-500">{label}</div>
-      <div className="text-xl font-bold">{value}</div>
+    <div className="panel p-5">
+      <div className="skeleton-grid">
+        <div className="skeleton-card" />
+        <div className="skeleton-card" />
+        <div className="skeleton-card" />
+        <div className="skeleton-card" />
+      </div>
     </div>
   );
 }
